@@ -21,7 +21,16 @@ Topics covered:
 
 ### 2. [Optimizing Latency](AI%20research/Optimizing%20Latency.ipynb)
 
-Research into techniques for reducing end-to-end latency in AI agent pipelines.
+Instruments each stage of the voice agent pipeline to measure, isolate, and reduce end-to-end latency.
+
+**Metrics tracked:** `EOU Delay · Transcription Delay · LLM TTFT · Tokens/s · TTS TTFB`
+
+Topics covered:
+- Event-driven metrics collection using `livekit.agents.metrics`
+- Per-turn latency breakdown (EOU, STT, LLM, TTS)
+- Interpreting the session summary to identify the dominant bottleneck
+- A/B model comparison via `LLM_MODEL` env var (e.g. `gpt-4o` vs `gpt-4o-mini`)
+- Optimization strategies across every pipeline stage (VAD tuning, streaming STT, faster TTS encodings)
 
 ---
 
