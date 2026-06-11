@@ -11,13 +11,28 @@ git clone https://github.com/redtitan1981/AI.git
 cd AI/SwingTrader
 ```
 
-### 2. Install dependencies
+### 2. Create and activate a virtual environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate   # run this every time you open a new Terminal for this project
+```
+
+Your prompt should change to `(venv)`. Confirm:
+```bash
+which python   # should print: .../SwingTrader/venv/bin/python
+```
+
+> **Note:** If `python3 --version` is below 3.11, use a full path to a newer Python:
+> `path/to/python3.12 -m venv venv`
+
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment variables
+### 4. Configure environment variables
 
 ```bash
 cp .env.example .env
@@ -31,7 +46,7 @@ OPENAI_API_KEY=sk-...
 
 The `.env` file can live in `SwingTrader/` or any parent directory — the notebooks search up to 4 levels.
 
-### 4. Verify setup
+### 5. Verify setup
 
 Open and run `notebook/00_setup.ipynb` top to bottom. All checks must pass before proceeding.
 
@@ -48,4 +63,5 @@ Open and run `notebook/00_setup.ipynb` top to bottom. All checks must pass befor
 
 - **Kite Connect** is optional for research phases — notebooks fall back to yfinance automatically.
 - **KITE_ACCESS_TOKEN** expires daily at ~08:00 IST. Regenerate using Cell 7 in `00_setup.ipynb`.
-- Results are saved to `notebook/results/`.
+- Results are saved to `notebook/results/` (gitignored).
+- `venv/` is gitignored — each contributor creates their own local venv.
