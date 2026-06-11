@@ -1,68 +1,96 @@
 # AI Research Notebooks
 
-A collection of research notebooks exploring real-time AI agent architectures, with a focus on voice and latency optimization.
+A collection of Jupyter notebooks exploring LLM agent architectures — voice agents, email automation, and algorithmic trading.
 
 ---
 
-## Notebooks
+## Projects
 
-### 1. [Voice Agent Components](AI%20research/Voice%20Agent%20Components.ipynb)
+### 1. Voice Agents — [`voice agents/`](voice%20agents/)
 
-Explores the core components of a real-time, voice-enabled AI agent built on the [LiveKit Agents](https://docs.livekit.io/agents/) framework.
+Real-time voice agent built on [LiveKit Agents](https://docs.livekit.io/agents/).
+
+| Notebook | Description |
+|----------|-------------|
+| [Voice Agent Components](voice%20agents/Voice%20Agent%20Components.ipynb) | Core pipeline: VAD → STT → LLM → TTS |
+| [Optimizing Latency](voice%20agents/Optimizing%20Latency.ipynb) | Per-stage latency measurement and reduction |
 
 **Pipeline:** `VAD (Silero) → STT (OpenAI Whisper) → LLM (GPT-4o) → TTS (ElevenLabs)`
 
-Topics covered:
-- Real-time audio transport via LiveKit / WebRTC
-- Voice Activity Detection to gate speech recognition
-- Streaming STT → LLM → TTS pipeline for low-latency response
-- Voice persona selection with ElevenLabs
-- Prompt engineering constraints specific to voice interfaces
-
-### 2. [Optimizing Latency](AI%20research/Optimizing%20Latency.ipynb)
-
-Instruments each stage of the voice agent pipeline to measure, isolate, and reduce end-to-end latency.
-
-**Metrics tracked:** `EOU Delay · Transcription Delay · LLM TTFT · Tokens/s · TTS TTFB`
-
-Topics covered:
-- Event-driven metrics collection using `livekit.agents.metrics`
-- Per-turn latency breakdown (EOU, STT, LLM, TTS)
-- Interpreting the session summary to identify the dominant bottleneck
-- A/B model comparison via `LLM_MODEL` env var (e.g. `gpt-4o` vs `gpt-4o-mini`)
-- Optimization strategies across every pipeline stage (VAD tuning, streaming STT, faster TTS encodings)
-
----
-
-## Setup
-
-### Requirements
-
+**Quick start:**
 ```bash
 pip install -r requirements.txt
+cp .env.example .env   # add OPENAI_API_KEY and ELEVEN_API_KEY
 ```
 
-### API Keys
-
-Create a `.env` file in the project root:
-
-```
-OPENAI_API_KEY=sk-...        # https://platform.openai.com/api-keys
-ELEVEN_API_KEY=...           # https://elevenlabs.io → Profile → API Key
-```
-
-> `ELEVENLABS_API_KEY` is also accepted as an alias for `ELEVEN_API_KEY`.
+See [`voice agents/README.md`](voice%20agents/README.md) for details.
 
 ---
 
-## Project Structure
+### 2. Email Assistant — [`email/`](email/)
+
+Baseline LangGraph email assistant with a two-stage triage + ReAct response pipeline.
+
+| Notebook | Description |
+|----------|-------------|
+| [Baseline Email Assistant](email/Baseline%20Email%20Assitant.ipynb) | gpt-4o-mini triage router + gpt-4o response agent with tool use |
+
+**Pipeline:** `Incoming email → Triage Router (gpt-4o-mini) → [ignore / notify / respond] → Response Agent (gpt-4o) → write_email / schedule_meeting`
+
+**Quick start:**
+```bash
+pip install -r email/requirements.txt
+cp email/.env.example email/.env   # add OPENAI_API_KEY
+```
+
+See [`email/README.md`](email/README.md) for details.
+
+---
+
+### 3. SwingTrader — [`SwingTrader/`](SwingTrader/)
+
+LangGraph-based swing trading agent for NSE equities.
+
+| Notebook | Description |
+|----------|-------------|
+| `00_setup.ipynb` | Environment and dependency verification |
+| `01_data_layer.ipynb` | yfinance / Kite data fetching and OHLC processing |
+| `02_technical_agent.ipynb` | Technical indicator agent (pandas-ta + LangGraph) |
+| `03_poc_pipeline.ipynb` | End-to-end POC pipeline |
+
+**Quick start:**
+```bash
+cd SwingTrader
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # add OPENAI_API_KEY
+```
+
+See [`SwingTrader/README.md`](SwingTrader/README.md) for full setup and Kite Connect instructions.
+
+---
+
+## Repository Structure
 
 ```
 AI/
-├── AI research/
+├── voice agents/
 │   ├── Voice Agent Components.ipynb
-│   └── Optimizing Latency.ipynb
-├── requirements.txt
-├── .env.example
+│   ├── Optimizing Latency.ipynb
+│   ├── images/
+│   └── README.md
+├── email/
+│   ├── Baseline Email Assitant.ipynb
+│   ├── prompts.py
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── README.md
+├── SwingTrader/
+│   ├── notebooks/
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── README.md
+├── requirements.txt      # voice agents dependencies
+├── .env.example          # voice agents API keys
 └── README.md
 ```

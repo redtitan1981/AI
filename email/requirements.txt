@@ -1,0 +1,20 @@
+# Email Assistant — Python dependencies
+# Install: pip install -r requirements.txt
+# Python: 3.11+
+
+# LLM and agent framework
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+langgraph>=0.2.0
+
+# Schema and validation
+pydantic>=2.7.0
+typing-extensions>=4.9.0
+
+# Jupyter
+jupyterlab>=4.0.0
+ipython>=8.0.0
+
+# Environment
+python-dotenv>=1.0.0
