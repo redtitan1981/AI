@@ -3,5 +3,5 @@ venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-notebook/results/*
-!notebook/results/.gitkeep
+notebooks/results/*
+!notebooks/results/.gitkeep

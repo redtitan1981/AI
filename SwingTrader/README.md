@@ -48,7 +48,7 @@ The `.env` file can live in `SwingTrader/` or any parent directory — the noteb
 
 ### 5. Verify setup
 
-Open and run `notebook/00_setup.ipynb` top to bottom. All checks must pass before proceeding.
+Open and run `notebooks/00_setup.ipynb` top to bottom. All checks must pass before proceeding.
 
 ## Notebooks
 
@@ -63,5 +63,5 @@ Open and run `notebook/00_setup.ipynb` top to bottom. All checks must pass befor
 
 - **Kite Connect** is optional for research phases — notebooks fall back to yfinance automatically.
 - **KITE_ACCESS_TOKEN** expires daily at ~08:00 IST. Regenerate using Cell 7 in `00_setup.ipynb`.
-- Results are saved to `notebook/results/` (gitignored).
+- Results are saved to `notebooks/results/` (gitignored).
 - `venv/` is gitignored — each contributor creates their own local venv.
