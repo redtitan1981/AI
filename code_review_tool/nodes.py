@@ -431,6 +431,10 @@ Follow with 1-2 sentences explaining your reasoning."""
             verdict = keyword
             break
 
+    print(f"\n{'='*60}")
+    print(f"FINAL DECISION ({label}): {verdict}")
+    print(f"{'='*60}\n")
+
     return {
         "final_decision": f"[{label}] {decision_text}",
         "tokens_used": {
@@ -446,14 +450,75 @@ Follow with 1-2 sentences explaining your reasoning."""
 # return_final_answer — terminal display node
 # ------------------------------------------------------------------
 def return_final_answer(state: PRReviewState) -> dict:
+    """
+    Terminal node — prints a detailed final report for developers.
+    Surfaces the structured fix list, recommendations, confidence score,
+    and judge score so developers know exactly what to address.
+    """
     if state.get("errors"):
+        print("❌ Flow ended with errors:")
         for err in state["errors"]:
-            print(f"❌ {err}")
+            print(f"   • {err}")
+
     answer = state.get("final_decision") or "No decision reached."
     print("\n" + "=" * 60)
     print("FINAL ANSWER")
     print("=" * 60)
     print(answer)
+
+    review_type = state.get("review_type", "")
+    summary_str = state.get("summary") or ""
+
+    # Full review — non-blocking path: surface structured fix items
+    if review_type == "full" and summary_str and not summary_str.startswith("REJECT"):
+        try:
+            summary     = json.loads(summary_str)
+            fix_items   = summary.get("fix", [])
+            recommendations = summary.get("recommendations", "")
+            confidence  = summary.get("confidence")
+
+            if fix_items:
+                print("\n" + "─" * 60)
+                print(f"REQUIRED FIXES ({len(fix_items)} item{'s' if len(fix_items) != 1 else ''} — must address before merge):")
+                print("─" * 60)
+                for i, item in enumerate(fix_items, 1):
+                    if isinstance(item, dict):
+                        print(f"\n  {i}. Issue:      {item.get('issue', '')}")
+                        print(f"     Solution:   {item.get('solution', '')}")
+                        print(f"     Why:        {item.get('explanation', '')}")
+                    else:
+                        print(f"\n  {i}. {item}")
+
+            if recommendations:
+                print("\n" + "─" * 60)
+                print("RECOMMENDATIONS (nice-to-have):")
+                print("─" * 60)
+                print(f"  {recommendations}")
+
+            if confidence is not None:
+                print("\n" + "─" * 60)
+                print(f"MERGE CONFIDENCE: {confidence}/100")
+
+        except (json.JSONDecodeError, Exception):
+            pass
+
+    # Full review — blocked path: surface security findings
+    elif review_type == "full" and summary_str.startswith("REJECT"):
+        security = state.get("security_findings") or ""
+        if security:
+            print("\n" + "─" * 60)
+            print("BLOCKING SECURITY FINDINGS:")
+            print("─" * 60)
+            print(security[:800] + ("..." if len(security) > 800 else ""))
+
+    # Quality judge score (v2 graph only)
+    judge_score  = state.get("judge_score")
+    judge_reason = state.get("judge_reason")
+    if judge_score is not None:
+        print("\n" + "─" * 60)
+        print(f"QUALITY JUDGE: {judge_score}/10 — {judge_reason or ''}")
+
+    print("\n" + "=" * 60)
     return {}
 
 
