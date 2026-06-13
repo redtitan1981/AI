@@ -1,6 +1,7 @@
-.env
-.claude/
-.ipynb_checkpoints/
-untitled.chat
 __pycache__/
+.claude/
+.env
+.ipynb_checkpoints/
 *.pyc
+flow_state*.json
+untitled.chat
