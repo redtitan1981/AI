@@ -509,7 +509,7 @@ def return_final_answer(state: PRReviewState) -> dict:
             print("\n" + "─" * 60)
             print("BLOCKING SECURITY FINDINGS:")
             print("─" * 60)
-            print(security[:800] + ("..." if len(security) > 800 else ""))
+            print(security)
 
     # Quality judge score (v2 graph only)
     judge_score  = state.get("judge_score")
