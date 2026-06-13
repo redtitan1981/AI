@@ -1,50 +1,44 @@
-diff --git a/analytics/metrics.py b/analytics/metrics.py
+diff --git a/analytics/report.py b/analytics/report.py
 new file mode 100644
 --- /dev/null
-+++ b/analytics/metrics.py
-@@ -0,0 +1,40 @@
-+# Metrics calculation module
++++ b/analytics/report.py
+@@ -0,0 +1,34 @@
++# Analytics reporting helpers
 +
-+def calc(data):
-+    # poor naming: unclear what 'calc' does or what it returns
-+    r = []
-+    for i in range(len(data)):   # use enumerate() or direct iteration instead
-+        x = data[i]
-+        r.append(x * 2)
-+    return r
-+
-+def get_avg(nums):
-+    total = 0
-+    for n in nums:
-+        total = total + n        # use sum(nums) instead
-+    return total / len(nums)     # BUG: ZeroDivisionError if nums is empty
-+
-+def process_batch(items, multiplier=1.0):
-+    out = []
-+    for item in items:
-+        if item > 0:
-+            out.append(item * multiplier)
-+        # BUG: negative values silently dropped with no warning or logging
-+    return out
-+
-+def merge_dicts(d1, d2):
-+    result = {}
-+    for k in d1:
-+        result[k] = d1[k]
-+    for k in d2:
-+        result[k] = d2[k]
++def double_items(lst):
++    """Return a new list with each element doubled."""
++    result = []
++    for i in range(len(lst)):   # STYLE: prefer direct iteration or a list comprehension
++        result.append(lst[i] * 2)
 +    return result
-+    # Redundant: use {**d1, **d2} or d1 | d2 (Python 3.9+)
 +
-+class DataProcessor:
++def mean(numbers):
++    """Return the arithmetic mean, or 0.0 for an empty list."""
++    if not numbers:
++        return 0.0
++    total = 0
++    for n in numbers:
++        total = total + n       # STYLE: use sum(numbers) instead of manual accumulation
++    return total / len(numbers)
++
++def merge_configs(base, overrides):
++    """Merge two config dicts; values in overrides take precedence."""
++    merged = {}
++    for k in base:
++        merged[k] = base[k]
++    for k in overrides:
++        merged[k] = overrides[k]  # STYLE: use {**base, **overrides} or base | overrides (3.9+)
++    return merged
++
++class ReportBuilder:
 +    def __init__(self):
-+        self.data = []
-+        self.processed = False
++        self.rows = []
++        self._is_built = False  # STYLE: bool flag is redundant — len(self.rows) > 0 suffices
 +
-+    def add(self, item):
-+        self.data.append(item)
++    def add_row(self, row):
++        self.rows.append(row)
 +
-+    def run(self):
-+        self.data = calc(self.data)
-+        self.processed = True
-+        # BUG: no return value — caller has no way to retrieve results
++    def build(self):
++        self.rows = double_items(self.rows)
++        self._is_built = True
++        return self.rows

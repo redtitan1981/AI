@@ -56,7 +56,7 @@ Run cells top to bottom. Each section has a markdown explanation before the code
 |------|-------------|-----------------|
 | `files/code_changes.txt` | Auth code with SQL injection + PII logging | REJECT (BLOCKING) |
 | `files/code_changes_simple.txt` | Import alias rename | APPROVED (simple path) |
-| `files/code_changes_needswork.txt` | Quality issues, no security holes | REQUEST CHANGES (full, non-blocking) |
+| `files/code_changes_needswork.txt` | Style/quality issues only (naming, idioms) — no security holes | REQUEST CHANGES (full, non-blocking) |
 
 ---
 
