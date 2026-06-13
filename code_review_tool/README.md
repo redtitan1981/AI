@@ -17,6 +17,8 @@ A research notebook demonstrating how to build a **production-style automated co
 | State persistence (`flow_state.json`) | Step 13 |
 | Streaming real-time updates | Step 16 |
 | LangGraph checkpointer (`SqliteSaver`) | Step 20 |
+| LLM-as-Judge + retry loop | Step 23 |
+| Right-sizing models per task | Step 23 |
 
 ---
 
@@ -104,7 +106,8 @@ Run cells top to bottom. Each section has a markdown explanation before the code
 | Step 20 | SqliteSaver checkpointer |
 | Step 21 | Interactive: review your own diff |
 | Step 22 | Unit tests — nodes as pure functions |
-| Key Takeaways | Patterns reference + 6 exercises |
+| Step 23 | LLM-as-Judge: `gpt-4o-mini` scores quality analysis, triggers retry loop |
+| Key Takeaways | Patterns reference + 5 extensions |
 
 ---
 
@@ -115,8 +118,8 @@ The core logic is also available as standalone Python modules for use outside th
 | File | Contents |
 |------|----------|
 | `state.py` | `PRReviewState`, Pydantic output models, `merge_usage` reducer |
-| `nodes.py` | All 13 node and edge functions, ready to import |
-| `test_nodes.py` | 19 pytest tests — nodes, guardrails, reducer, Pydantic models |
+| `nodes.py` | All 15 node and edge functions, ready to import |
+| `test_nodes.py` | 22 pytest tests — nodes, guardrails, reducer, Pydantic models |
 
 ---
 

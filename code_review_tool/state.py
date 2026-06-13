@@ -25,6 +25,12 @@ class SimpleReviewOutput(BaseModel):
     recommendations: str = Field(description="Additional recommendations or observations")
 
 
+class QualityJudgeOutput(BaseModel):
+    """Output model for the LLM-as-Judge quality gate."""
+    score:  int = Field(description="Thoroughness score 1-10 for the quality analysis")
+    reason: str = Field(description="One sentence explaining the score")
+
+
 class FixItem(BaseModel):
     """A single actionable fix item returned by the Tech Lead agent."""
     issue:       str = Field(description="The specific problem that must be fixed")
@@ -59,14 +65,17 @@ class PRReviewState(TypedDict):
         tokens_used       : cumulative token counts (reducer: merge_usage)
         messages          : append-only execution log (reducer: operator.add)
     """
-    pr_file_path:      str
-    pr_content:        str
-    review_type:       str
-    quality_findings:  Optional[str]
-    security_findings: Optional[str]
-    summary:           Optional[str]
-    simple_review:     Optional[str]
-    final_decision:    Optional[str]
-    errors:            Annotated[list, operator.add]
-    tokens_used:       Annotated[dict, merge_usage]
-    messages:          Annotated[list, operator.add]
+    pr_file_path:        str
+    pr_content:          str
+    review_type:         str
+    quality_findings:    Optional[str]
+    security_findings:   Optional[str]
+    summary:             Optional[str]
+    simple_review:       Optional[str]
+    final_decision:      Optional[str]
+    quality_retry_count: int
+    judge_score:         Optional[int]
+    judge_reason:        Optional[str]
+    errors:              Annotated[list, operator.add]
+    tokens_used:         Annotated[dict, merge_usage]
+    messages:            Annotated[list, operator.add]

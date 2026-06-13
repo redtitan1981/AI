@@ -21,6 +21,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from state import (
     PRReviewState,
     SimpleReviewOutput,
+    QualityJudgeOutput,
     SummarizeFindingsOutput,
     merge_usage,
 )
@@ -29,7 +30,8 @@ load_dotenv(Path(__file__).parent / ".env")
 
 NOTEBOOK_DIR = Path(__file__).parent
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm       = ChatOpenAI(model="gpt-4o",      temperature=0)
+judge_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 
 # ------------------------------------------------------------------
@@ -141,7 +143,28 @@ Review the PR diff and return a structured assessment with:
 # quality_analysis_node — Senior Developer agent
 # ------------------------------------------------------------------
 def quality_analysis_node(state: PRReviewState) -> dict:
-    system_prompt = """You are a Senior Developer performing a code quality review.
+    retry = state.get("quality_retry_count", 0)
+    if retry > 0:
+        system_prompt = """You are a Senior Developer performing a rigorous code quality review.
+A previous review of this PR was rated insufficient. Be more thorough this time.
+
+Analyse the PR diff and provide a detailed report covering:
+
+1. STYLE ISSUES
+   - Naming conventions, formatting, code organisation
+   - PEP8 / language-standard violations
+
+2. POTENTIAL BUGS
+   - Logic errors, edge cases not handled, incorrect assumptions
+   - Resource leaks, exception handling gaps
+
+3. SEVERITY CLASSIFICATION
+   - List each issue as CRITICAL, MAJOR, or MINOR
+   - Critical = must fix before merge. Minor = nice-to-have.
+
+Be specific. Reference line numbers or code snippets. Do not omit any issues."""
+    else:
+        system_prompt = """You are a Senior Developer performing a code quality review.
 
 Analyse the PR diff and provide a structured report covering:
 
@@ -158,6 +181,9 @@ Analyse the PR diff and provide a structured report covering:
    - Critical = must fix before merge. Minor = nice-to-have.
 
 Be specific. Reference line numbers or code snippets where relevant."""
+
+    if retry > 0:
+        print(f"🔄 Quality Analysis retry {retry}/2 — using stricter prompt")
 
     try:
         response = llm.invoke([
@@ -177,7 +203,7 @@ Be specific. Reference line numbers or code snippets where relevant."""
             "output_tokens": usage.get("output_tokens", 0),
             "total_tokens":  usage.get("total_tokens", 0),
         },
-        "messages": [f"[quality_analysis] complete ({len(content)} chars)"],
+        "messages": [f"[quality_analysis] complete ({len(content)} chars){' (retry)' if retry > 0 else ''}"],
     }
 
 
@@ -226,6 +252,68 @@ Be precise. Reference specific lines or patterns in the diff."""
         },
         "messages": [f"[security_review] complete ({len(content)} chars)"],
     }
+
+
+# ------------------------------------------------------------------
+# quality_judge_node — LLM-as-Judge quality gate (gpt-4o-mini)
+# ------------------------------------------------------------------
+def quality_judge_node(state: PRReviewState) -> dict:
+    structured_llm = judge_llm.with_structured_output(QualityJudgeOutput, include_raw=True)
+    system_prompt = """You are a code review quality assessor.
+
+Rate the thoroughness of the following code quality analysis on a scale of 1-10:
+- 8-10: Comprehensive — covers style, bugs, severity levels, specific line references
+- 5-7:  Adequate — covers main issues but lacks specificity or misses some areas
+- 1-4:  Insufficient — too brief, vague, or misses obvious issues
+
+Return a score (int 1-10) and a one-sentence reason."""
+
+    try:
+        raw_result = structured_llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=f"Quality analysis to evaluate:\n\n{state.get('quality_findings', '')}"),
+        ])
+        judge_out = raw_result["parsed"]
+        usage = raw_result["raw"].usage_metadata or {}
+        score  = judge_out.score
+        reason = judge_out.reason
+    except Exception as e:
+        score  = 8   # default to proceed on error
+        reason = f"[ERROR] Judge failed: {e} — defaulting to proceed"
+        usage  = {}
+
+    retry_count     = state.get("quality_retry_count", 0)
+    new_retry_count = retry_count + 1 if score < 7 else retry_count
+
+    if score >= 7:
+        verdict = f"score={score}/10 — passed"
+    elif new_retry_count <= 2:
+        verdict = f"score={score}/10 — retry {new_retry_count}/2"
+    else:
+        verdict = f"score={score}/10 — retry cap reached, proceeding"
+
+    print(f"⚖️  Quality Judge: {verdict}")
+
+    return {
+        "judge_score":           score,
+        "judge_reason":          reason,
+        "quality_retry_count":   new_retry_count,
+        "tokens_used": {
+            "input_tokens":  usage.get("input_tokens",  0),
+            "output_tokens": usage.get("output_tokens", 0),
+            "total_tokens":  usage.get("total_tokens",  0),
+        },
+        "messages": [f"[quality_judge] {verdict} — {reason[:80]}"],
+    }
+
+
+def quality_judge_edge(state: PRReviewState) -> str:
+    """Routes to 'retry' (re-run quality_analysis) or 'proceed' (continue to aggregate)."""
+    score       = state.get("judge_score") or 10
+    retry_count = state.get("quality_retry_count") or 0
+    if score < 7 and retry_count <= 2:
+        return "retry"
+    return "proceed"
 
 
 # ------------------------------------------------------------------

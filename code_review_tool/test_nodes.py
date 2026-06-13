@@ -10,8 +10,8 @@ Usage:
 import pytest
 from pathlib import Path
 
-from state import FixItem, SimpleReviewOutput, SummarizeFindingsOutput, merge_usage
-from nodes import read_pr_file, routing_edge, output_guardrail
+from state import FixItem, SimpleReviewOutput, SummarizeFindingsOutput, QualityJudgeOutput, merge_usage
+from nodes import read_pr_file, routing_edge, output_guardrail, quality_judge_edge
 
 
 # ---------------------------------------------------------------------------
@@ -26,6 +26,9 @@ BASE = {
     "summary": None,
     "simple_review": None,
     "final_decision": None,
+    "quality_retry_count": 0,
+    "judge_score": None,
+    "judge_reason": None,
     "errors": [],
     "tokens_used": {},
     "messages": [],
@@ -110,6 +113,29 @@ class TestMergeUsage:
 # ---------------------------------------------------------------------------
 # Pydantic output models
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# quality_judge_edge
+# ---------------------------------------------------------------------------
+class TestQualityJudgeEdge:
+    def test_high_score_proceeds(self):
+        assert quality_judge_edge({**BASE, "judge_score": 8, "quality_retry_count": 0}) == "proceed"
+
+    def test_perfect_score_proceeds(self):
+        assert quality_judge_edge({**BASE, "judge_score": 10, "quality_retry_count": 0}) == "proceed"
+
+    def test_threshold_score_proceeds(self):
+        assert quality_judge_edge({**BASE, "judge_score": 7, "quality_retry_count": 0}) == "proceed"
+
+    def test_low_score_retries_when_under_cap(self):
+        assert quality_judge_edge({**BASE, "judge_score": 4, "quality_retry_count": 1}) == "retry"
+
+    def test_low_score_proceeds_when_cap_reached(self):
+        assert quality_judge_edge({**BASE, "judge_score": 4, "quality_retry_count": 3}) == "proceed"
+
+    def test_no_score_defaults_to_proceed(self):
+        assert quality_judge_edge({**BASE, "judge_score": None, "quality_retry_count": 0}) == "proceed"
+
+
 class TestPydanticModels:
     def test_fix_item_accepts_valid_fields(self):
         item = FixItem(
@@ -126,6 +152,10 @@ class TestPydanticModels:
     def test_simple_review_output_valid(self):
         review = SimpleReviewOutput(confidence=85, findings="Minor rename", recommendations="None")
         assert review.confidence == 85
+
+    def test_quality_judge_output_valid(self):
+        judge = QualityJudgeOutput(score=8, reason="Comprehensive with line references")
+        assert judge.score == 8
 
     def test_summarize_findings_output_with_fix_list(self):
         fix = FixItem(issue="X", solution="Y", explanation="Z")
