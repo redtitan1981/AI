@@ -341,14 +341,9 @@ def report_guardrail(state: PRReviewState) -> str:
 # blocked_review_node — hard stop when guardrail fires
 # ------------------------------------------------------------------
 def blocked_review_node(state: PRReviewState) -> dict:
-    verdict = (
-        "REJECT\n\n"
-        "This PR has been BLOCKED by the security output guardrail.\n"
-        "Critical security issues were detected that must be resolved before merge.\n\n"
-        f"Security Findings:\n{state.get('security_findings', '')}"
-    )
+    """Logs the guardrail block. Summary is already set by summarize_findings_node."""
+    print("🚫 Review BLOCKED — critical security issues must be resolved before merge")
     return {
-        "summary": verdict,
         "messages": ["[blocked] Review halted by output guardrail — REJECT"],
     }
 
@@ -414,10 +409,17 @@ Given the review results below, output exactly one of:
 
 Follow with 1-2 sentences explaining your reasoning."""
 
+    # When security findings are blocking, include them so the LLM knows to REJECT
+    security = state.get("security_findings", "")
+    if review_type == "full" and "BLOCKING" in security.upper():
+        review_content = f"{review_json}\n\nSECURITY FINDINGS (BLOCKING — must not merge):\n{security}"
+    else:
+        review_content = review_json
+
     try:
         response = llm.invoke([
             SystemMessage(content=system_prompt),
-            HumanMessage(content=f"Review result ({label}):\n{review_json}"),
+            HumanMessage(content=f"Review result ({label}):\n{review_content}"),
         ])
         decision_text = response.content
         usage = response.usage_metadata or {}
@@ -469,8 +471,8 @@ def return_final_answer(state: PRReviewState) -> dict:
     review_type = state.get("review_type", "")
     summary_str = state.get("summary") or ""
 
-    # Full review — non-blocking path: surface structured fix items
-    if review_type == "full" and summary_str and not summary_str.startswith("REJECT"):
+    # Full review — always show structured fix items and recommendations
+    if review_type == "full" and summary_str:
         try:
             parsed = SummarizeFindingsOutput.model_validate_json(summary_str)
 
@@ -492,17 +494,16 @@ def return_final_answer(state: PRReviewState) -> dict:
             print("\n" + "─" * 60)
             print(f"MERGE CONFIDENCE: {parsed.confidence}/100")
 
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"⚠️  Could not parse structured summary: {e}")
 
-    # Full review — blocked path: surface security findings
-    elif review_type == "full" and summary_str.startswith("REJECT"):
-        security = state.get("security_findings") or ""
-        if security:
-            print("\n" + "─" * 60)
-            print("BLOCKING SECURITY FINDINGS:")
-            print("─" * 60)
-            print(security)
+    # Always show security findings when blocking issues were found
+    security = state.get("security_findings") or ""
+    if review_type == "full" and "BLOCKING" in security.upper():
+        print("\n" + "─" * 60)
+        print("BLOCKING SECURITY FINDINGS:")
+        print("─" * 60)
+        print(security)
 
     # Quality judge score (v2 graph only)
     judge_score  = state.get("judge_score")
