@@ -25,13 +25,14 @@ A research notebook demonstrating how to build a **production-style automated co
 ## Architecture
 
 ```
-PR File ──► Router ──► [simple]  ──► Simple Review ────────────────────► Final Decision ──► Answer
-                   ├──► [full]   ──► Security Review ─┐
-                   │               Quality Analysis  ─┴──► Guardrail ──► Tech Lead ──► Final Decision
-                   └──► [error]  ──────────────────────────────────────────────────────► Answer
+PR File ──► Router ──► [simple]  ──► Simple Review ────────────────────────────────────────► Final Decision ──► Answer
+                   ├──► [full]   ──► Security Review ──────────────────────────────┐
+                   │               Quality Analysis ──► Quality Judge ─[pass]──► Guardrail ──► Tech Lead ──► Final Decision
+                   │                       ↑ retry (score < 7) ─┘
+                   └──► [error]  ──────────────────────────────────────────────────────────────────────────► Answer
 ```
 
-**11 nodes, 3 execution paths, 2 guardrails, parallel agents.**
+**12 nodes, 3 execution paths, 2 guardrails, 1 LLM judge (gpt-4o-mini), parallel agents.**
 
 ---
 
