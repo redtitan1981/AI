@@ -116,6 +116,7 @@ The core logic is also available as standalone Python modules for use outside th
 |------|----------|
 | `state.py` | `PRReviewState`, Pydantic output models, `merge_usage` reducer |
 | `nodes.py` | All 13 node and edge functions, ready to import |
+| `test_nodes.py` | 19 pytest tests — nodes, guardrails, reducer, Pydantic models |
 
 ---
 
