@@ -472,34 +472,27 @@ def return_final_answer(state: PRReviewState) -> dict:
     # Full review — non-blocking path: surface structured fix items
     if review_type == "full" and summary_str and not summary_str.startswith("REJECT"):
         try:
-            summary     = json.loads(summary_str)
-            fix_items   = summary.get("fix", [])
-            recommendations = summary.get("recommendations", "")
-            confidence  = summary.get("confidence")
+            parsed = SummarizeFindingsOutput.model_validate_json(summary_str)
 
-            if fix_items:
+            if parsed.fix:
                 print("\n" + "─" * 60)
-                print(f"REQUIRED FIXES ({len(fix_items)} item{'s' if len(fix_items) != 1 else ''} — must address before merge):")
+                print(f"REQUIRED FIXES ({len(parsed.fix)} item{'s' if len(parsed.fix) != 1 else ''} — must address before merge):")
                 print("─" * 60)
-                for i, item in enumerate(fix_items, 1):
-                    if isinstance(item, dict):
-                        print(f"\n  {i}. Issue:      {item.get('issue', '')}")
-                        print(f"     Solution:   {item.get('solution', '')}")
-                        print(f"     Why:        {item.get('explanation', '')}")
-                    else:
-                        print(f"\n  {i}. {item}")
+                for i, item in enumerate(parsed.fix, 1):
+                    print(f"\n  {i}. Issue:      {item.issue}")
+                    print(f"     Solution:   {item.solution}")
+                    print(f"     Why:        {item.explanation}")
 
-            if recommendations:
+            if parsed.recommendations:
                 print("\n" + "─" * 60)
                 print("RECOMMENDATIONS (nice-to-have):")
                 print("─" * 60)
-                print(f"  {recommendations}")
+                print(f"  {parsed.recommendations}")
 
-            if confidence is not None:
-                print("\n" + "─" * 60)
-                print(f"MERGE CONFIDENCE: {confidence}/100")
+            print("\n" + "─" * 60)
+            print(f"MERGE CONFIDENCE: {parsed.confidence}/100")
 
-        except (json.JSONDecodeError, Exception):
+        except Exception:
             pass
 
     # Full review — blocked path: surface security findings
