@@ -4,4 +4,5 @@ __pycache__/
 .ipynb_checkpoints/
 *.pyc
 flow_state*.json
+checkpoints.db
 untitled.chat

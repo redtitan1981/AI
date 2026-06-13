@@ -1,0 +1,58 @@
+diff --git a/analytics/metrics.py b/analytics/metrics.py
+new file mode 100644
+--- /dev/null
++++ b/analytics/metrics.py
+@@ -0,0 +1,48 @@
++# Metrics calculation module
++
++def calc(data):
++    # calculates stuff with data
++    r = []
++    for i in range(len(data)):
++        x = data[i]
++        r.append(x * 2)
++    return r
++
++def get_avg(nums):
++    total = 0
++    for n in nums:
++        total = total + n
++    result = total / len(nums)  # BUG: ZeroDivisionError if nums is empty
++    return result
++
++def process_batch(items, multiplier=1.0):
++    out = []
++    for item in items:
++        if item > 0:
++            out.append(item * multiplier)
++        # BUG: negative values silently dropped with no warning or logging
++    f = open("output.txt", "w")
++    f.write(str(out))
++    # BUG: file handle never closed — resource leak, use context manager
++    return out
++
++def merge_dicts(d1, d2):
++    result = {}
++    for k in d1:
++        result[k] = d1[k]
++    for k in d2:
++        result[k] = d2[k]
++    return result
++    # Redundant: use {**d1, **d2} or d1 | d2 (Python 3.9+)
++
++class DataProcessor:
++    def __init__(self):
++        self.data = []
++        self.processed = False
++
++    def add(self, item):
++        self.data.append(item)
++
++    def run(self):
++        # BUG: no return value — caller cannot retrieve results
++        self.data = calc(self.data)
++        self.processed = True
++
++    def reset(self):
++        self.data = []
++        self.processed = False
